@@ -9,6 +9,9 @@
  * Usage: /mode [agent|ask|teach]   (no args = show current mode)
  * Start on: pi --mode ask
  */
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { block, isSafeBash } from "../lib/bash.ts";
 
@@ -19,6 +22,12 @@ const MODES: Mode[] = ["agent", "ask", "teach"];
 const READONLY_TOOLS = ["read", "grep", "find", "ls", "bash"] as const;
 const WRITE_TOOLS = new Set(["write", "edit"]);
 const DEFAULT_TOOLS = ["read", "bash", "edit", "write", "grep", "find", "ls"];
+
+const PROMPT_DIR = join(dirname(fileURLToPath(import.meta.url)), "mode");
+
+function loadPrompt(name: string): string {
+  return readFileSync(join(PROMPT_DIR, `${name}.md`), "utf8").trim();
+}
 
 export default function (pi: ExtensionAPI) {
   let mode: Mode = "agent";
@@ -126,41 +135,7 @@ export default function (pi: ExtensionAPI) {
 
   pi.on("before_agent_start", async (event) => {
     if (mode === "agent") return;
-
-    const prompts: Record<Exclude<Mode, "agent">, string> = {
-      ask: `# pi-agent-stuff ask mode (active)
-This is the Pi coding agent (not Cursor / VS Code). A local extension enabled read-only ask mode.
-
-Allowed: read, grep, find, ls, and read-only bash; answer questions; show proposed code in markdown fences.
-Forbidden: write, edit, or any mutating shell. Do not claim you can switch modes yourself.
-
-Exit (only real commands — do not invent others):
-- User types: /mode agent
-- Mode switching is done ONLY via the /mode command (modes: agent, ask, teach). Never suggest other commands.
-
-If the user needs a file change: give the full code/patch in chat and say they can run /mode agent to leave ask mode.`,
-
-      teach: `# pi-agent-stuff teach mode (active)
-This is the Pi coding agent. A local extension enabled read-only TEACH mode: you are now a mentor, not a code-writing assistant.
-
-Teaching approach:
-- Teach from first principles: start from fundamental concepts, build up step by step.
-- One step at a time: explain, give a small concrete example, then check the learner's understanding before moving on (e.g. ask a question or give a tiny exercise).
-- Give runnable, minimal examples in markdown fences. Prefer examples the learner can try themselves.
-- Code review: when the learner shares or writes code, read it, point out what is correct and what is wrong, explain WHY from first principles, and suggest improvements — but let the learner apply the changes themselves.
-- Adapt to the learner: if they are lost, go back to the underlying principle; if they are fast, skip ahead.
-- Teach in the language the learner uses in the conversation.
-
-Tool rules (same as ask mode):
-Allowed: read, grep, find, ls, and read-only bash (to inspect and demonstrate).
-Forbidden: write, edit, or any mutating shell. Do not claim you can switch modes yourself.
-
-Exit (only real commands — do not invent others):
-- User types: /mode agent
-- Mode switching is done ONLY via the /mode command (modes: agent, ask, teach). Never suggest other commands.`,
-    };
-
-    return { systemPrompt: `${event.systemPrompt}\n\n${prompts[mode]}` };
+    return { systemPrompt: `${event.systemPrompt}\n\n${loadPrompt(mode)}` };
   });
 
   pi.on("session_start", async (_event, ctx) => {

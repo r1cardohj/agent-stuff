@@ -9,6 +9,7 @@ Personal [Pi](https://pi.dev) package: extensions, skills, and prompts.
 |------|------|
 | `extensions/itsdangerous.ts` | Block / confirm dangerous bash commands |
 | `extensions/mode.ts` | `/mode` switch between agent / ask / teach modes |
+| `extensions/mode/*.md` | System prompts for ask / teach modes (edit to tweak behavior) |
 | `lib/bash.ts` | Shared bash allow/deny helpers (not an extension entry) |
 | `skills/` | Skills for the model (add `*/SKILL.md`) |
 | `prompts/` | Prompt templates (add `*.md`) |
