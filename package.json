@@ -21,7 +21,7 @@
   "pi": {
     "extensions": [
       "./extensions/itsdangerous.ts",
-      "./extensions/ask-mode.ts"
+      "./extensions/mode.ts"
     ],
     "skills": [
       "./skills"

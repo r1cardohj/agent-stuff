@@ -8,21 +8,22 @@ Personal [Pi](https://pi.dev) package: extensions, skills, and prompts.
 | Path | Role |
 |------|------|
 | `extensions/itsdangerous.ts` | Block / confirm dangerous bash commands |
-| `extensions/ask-mode.ts` | `/ask` read-only Q&A (no write/edit) |
+| `extensions/mode.ts` | `/mode` switch between agent / ask / teach modes |
 | `lib/bash.ts` | Shared bash allow/deny helpers (not an extension entry) |
 | `skills/` | Skills for the model (add `*/SKILL.md`) |
 | `prompts/` | Prompt templates (add `*.md`) |
 
-### /ask
+### /mode
 
 ```text
-/ask        # toggle
-/ask on     # force on
-/ask off    # restore tools
-pi --ask    # start in ask mode
+/mode         # interactive picker UI (TUI), or show current mode without UI
+/mode agent   # default: full tools
+/mode ask     # read-only Q&A
+/mode teach   # education mode: first-principles, step-by-step, examples + code review
+pi --mode ask # start in a specific mode
 ```
 
-Active tools: `read`, `grep`, `find`, `ls`, `bash` (read-only allowlist). Model should answer in chat with code fences, not edit files.
+`ask` and `teach` are read-only: active tools are `read`, `grep`, `find`, `ls`, `bash` (read-only allowlist). Model should answer in chat with code fences, not edit files.
 
 ### itsdangerous
 
