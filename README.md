@@ -10,6 +10,9 @@ Personal [Pi](https://pi.dev) package: extensions, skills, and prompts.
 | `extensions/itsdangerous.ts` | Block / confirm dangerous bash commands |
 | `extensions/mode.ts` | `/mode` switch between agent / ask / teach modes |
 | `extensions/mode/*.md` | System prompts for ask / teach modes (edit to tweak behavior) |
+| `extensions/split.ts` | `/split v\|h` fork session into a new Windows Terminal pane |
+| `extensions/answer.ts` | `/answer` extract questions from last assistant message into interactive Q&A |
+| `extensions/files.ts` | `/files` browse git-tracked + session-referenced files (Ctrl+Shift+O / Ctrl+Shift+R) |
 | `lib/bash.ts` | Shared bash allow/deny helpers (not an extension entry) |
 | `skills/` | Skills for the model (add `*/SKILL.md`) |
 | `prompts/` | Prompt templates (add `*.md`) |
