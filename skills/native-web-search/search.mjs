@@ -69,7 +69,7 @@ function parseArgs(argv) {
 
 function usage() {
 	return `Usage:
-  node search.mjs "<query>" [--purpose "<why>"] [--provider kimi-coding|deepseek|openai-codex|anthropic] [--model <id>] [--json]
+  node search.mjs "<query>" [--purpose "<why>"] [--provider kimi-coding|deepseek] [--model <id>] [--json]
 
 Examples:
   node search.mjs "latest python release" --purpose "update dependency notes"
@@ -118,8 +118,6 @@ function getAgentDir() {
 function normalizeProvider(provider) {
 	if (!provider) return undefined;
 	const p = String(provider).toLowerCase().trim();
-	if (p.includes("anthropic") || p.includes("claude")) return "anthropic";
-	if (p.includes("codex") || p === "openai" || p.startsWith("openai")) return "openai-codex";
 	if (p.includes("deepseek") || p === "ds") return "deepseek";
 	if (p.includes("kimi")) return "kimi-coding";
 	return undefined;
@@ -134,22 +132,8 @@ function pickProvider(argProvider, settings, auth) {
 	// tools, so prefer kimi whenever its credential exists.
 	if (auth?.["kimi-coding"]) return "kimi-coding";
 	if (process.env.DEEPSEEK_API_KEY) return "deepseek";
-	if (auth?.["openai-codex"]) return "openai-codex";
-	if (auth?.anthropic) return "anthropic";
 
-	throw new Error("Could not determine provider. Pass --provider kimi-coding|deepseek|openai-codex|anthropic");
-}
-
-function decodeJwtAccountId(jwt) {
-	if (!jwt || typeof jwt !== "string") return undefined;
-	try {
-		const parts = jwt.split(".");
-		if (parts.length !== 3) return undefined;
-		const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8"));
-		return payload?.["https://api.openai.com/auth"]?.chatgpt_account_id;
-	} catch {
-		return undefined;
-	}
+	throw new Error("Could not determine provider. Pass --provider kimi-coding|deepseek");
 }
 
 function findPiExecutable() {
@@ -309,10 +293,8 @@ function pickFastModel(provider, requestedModel, piAi) {
 	const models = typeof piAi.getModels === "function" ? piAi.getModels(provider) : [];
 	if (!Array.isArray(models) || models.length === 0) {
 		if (requestedModel) return { id: requestedModel, baseUrl: undefined };
-		if (provider === "openai-codex") return { id: "gpt-5.4-mini", baseUrl: "https://chatgpt.com/backend-api" };
 		if (provider === "deepseek") return { id: "deepseek-v4-flash", baseUrl: "https://api.deepseek.com" };
-		if (provider === "kimi-coding") return { id: "k3", baseUrl: "https://api.kimi.com/coding" };
-		return { id: "claude-haiku-4-5", baseUrl: "https://api.anthropic.com" };
+		return { id: "k3", baseUrl: "https://api.kimi.com/coding" };
 	}
 
 	if (requestedModel) {
@@ -322,13 +304,9 @@ function pickFastModel(provider, requestedModel, piAi) {
 	}
 
 	const preferredIds =
-		provider === "openai-codex"
-			? ["gpt-5.4-mini", "gpt-5.3-codex-spark", "gpt-5.1", "gpt-5.1-codex-mini"]
-			: provider === "deepseek"
-				? ["deepseek-v4-flash", "deepseek-v4-pro"]
-				: provider === "kimi-coding"
-					? ["k3", "kimi-for-coding", "k3-256k"]
-					: ["claude-haiku-4-5", "claude-3-5-haiku-latest", "claude-3-5-haiku-20241022"];
+		provider === "deepseek"
+			? ["deepseek-v4-flash", "deepseek-v4-pro"]
+			: ["k3", "kimi-for-coding", "k3-256k"];
 
 	for (const id of preferredIds) {
 		const found = models.find((m) => m.id === id);
@@ -412,122 +390,6 @@ function buildSystemPrompt() {
 	return "You are a fast web research assistant. Always produce practical summaries and include full source URLs (no shortened links).";
 }
 
-function resolveCodexUrl(baseUrl = "https://chatgpt.com/backend-api") {
-	const normalized = String(baseUrl || "https://chatgpt.com/backend-api").replace(/\/+$/, "");
-	if (normalized.endsWith("/codex/responses")) return normalized;
-	if (normalized.endsWith("/codex")) return `${normalized}/responses`;
-	return `${normalized}/codex/responses`;
-}
-
-function extractEventData(chunk) {
-	const payload = chunk
-		.split(/\r?\n/)
-		.filter((line) => line.startsWith("data:"))
-		.map((line) => line.slice(5).trim())
-		.join("\n")
-		.trim();
-	if (!payload || payload === "[DONE]") return null;
-	return payload;
-}
-
-async function runCodexSearch({ model, apiKey, accountId, query, purpose, timeoutMs, baseUrl }) {
-	const tokenAccountId = accountId || decodeJwtAccountId(apiKey);
-	if (!tokenAccountId) {
-		throw new Error("Could not determine ChatGPT account ID for openai-codex token.");
-	}
-
-	const body = {
-		model,
-		store: false,
-		stream: true,
-		instructions: buildSystemPrompt(),
-		input: [{ role: "user", content: buildUserPrompt(query, purpose) }],
-		tools: [{ type: "web_search" }],
-		tool_choice: "auto",
-	};
-
-	const endpoint = resolveCodexUrl(baseUrl);
-	const signal = typeof AbortSignal !== "undefined" && AbortSignal.timeout ? AbortSignal.timeout(timeoutMs) : undefined;
-
-	const res = await fetch(endpoint, {
-		method: "POST",
-		headers: {
-			authorization: `Bearer ${apiKey}`,
-			"chatgpt-account-id": tokenAccountId,
-			"content-type": "application/json",
-			accept: "text/event-stream",
-			"OpenAI-Beta": "responses=experimental",
-			originator: "pi-native-web-search-skill",
-		},
-		body: JSON.stringify(body),
-		signal,
-	});
-
-	if (!res.ok) {
-		const detail = await res.text();
-		throw new Error(`Codex request failed (${res.status}): ${detail}`);
-	}
-	if (!res.body) {
-		throw new Error("Codex response had no body");
-	}
-
-	const reader = res.body.getReader();
-	const decoder = new TextDecoder();
-	let buffer = "";
-	let text = "";
-	let fallbackText = "";
-
-	while (true) {
-		const { done, value } = await reader.read();
-		if (done) break;
-		buffer += decoder.decode(value, { stream: true });
-
-		let idx = buffer.indexOf("\n\n");
-		while (idx !== -1) {
-			const chunk = buffer.slice(0, idx);
-			buffer = buffer.slice(idx + 2);
-			idx = buffer.indexOf("\n\n");
-
-			const data = extractEventData(chunk);
-			if (!data) continue;
-
-			let event;
-			try {
-				event = JSON.parse(data);
-			} catch {
-				continue;
-			}
-
-			if (event.type === "response.output_text.delta" && typeof event.delta === "string") {
-				text += event.delta;
-			}
-
-			if (event.type === "response.output_item.done" && event.item?.type === "message") {
-				const parts = Array.isArray(event.item?.content) ? event.item.content : [];
-				const full = parts
-					.filter((p) => p.type === "output_text" && typeof p.text === "string")
-					.map((p) => p.text)
-					.join("\n");
-				if (full) fallbackText = full;
-			}
-
-			if (event.type === "error") {
-				throw new Error(event.message || "Codex stream failed");
-			}
-
-			if (event.type === "response.failed") {
-				throw new Error(event.response?.error?.message || "Codex response failed");
-			}
-		}
-	}
-
-	const finalText = (text || fallbackText || "").trim();
-	if (!finalText) {
-		throw new Error("Codex returned an empty response");
-	}
-	return finalText;
-}
-
 function buildDeepseekUrl(baseUrl = "https://api.deepseek.com") {
 	const normalized = String(baseUrl || "https://api.deepseek.com").replace(/\/+$/, "");
 	if (normalized.endsWith("/chat/completions")) return normalized;
@@ -591,29 +453,20 @@ async function runDeepseekSearch({ model, apiKey, query, purpose, timeoutMs, bas
 	return { text: plain, usedWebSearch: false };
 }
 
-function buildAnthropicHeaders(apiKey) {
-	const oauthToken = typeof apiKey === "string" && apiKey.includes("sk-ant-oat");
-	if (oauthToken) {
-		return {
-			authorization: `Bearer ${apiKey}`,
-			"anthropic-version": "2023-06-01",
-			"anthropic-beta": "claude-code-20250219,oauth-2025-04-20,web-search-2025-03-05",
-			"content-type": "application/json",
-			accept: "application/json",
-			"x-app": "cli",
-			"user-agent": "claude-cli/1.0.72 (external, cli)",
-		};
-	}
+// Kimi Code OAuth access token authenticates as `Authorization: Bearer`
+// (see pi-ai's kimi-coding provider).
+function buildKimiHeaders(apiKey) {
 	return {
-		"x-api-key": apiKey,
+		authorization: `Bearer ${apiKey}`,
 		"anthropic-version": "2023-06-01",
 		"anthropic-beta": "web-search-2025-03-05",
 		"content-type": "application/json",
 		accept: "application/json",
+		"User-Agent": "KimiCLI/1.5",
 	};
 }
 
-async function runAnthropicSearch({ model, apiKey, query, purpose, timeoutMs, baseUrl = "https://api.anthropic.com", isKimi = false }) {
+async function runKimiSearch({ model, apiKey, query, purpose, timeoutMs, baseUrl = "https://api.kimi.com/coding" }) {
 	const endpoint = `${baseUrl.replace(/\/+$/, "")}/v1/messages`;
 	const signal = typeof AbortSignal !== "undefined" && AbortSignal.timeout ? AbortSignal.timeout(timeoutMs) : undefined;
 
@@ -629,21 +482,16 @@ async function runAnthropicSearch({ model, apiKey, query, purpose, timeoutMs, ba
 			body.tools = [{ type: "web_search_20250305", name: "web_search", max_uses: 5 }];
 		}
 
-		const headers = buildAnthropicHeaders(apiKey);
-		if (isKimi) {
-			headers["User-Agent"] = "KimiCLI/1.5";
-		}
-
 		const res = await fetch(endpoint, {
 			method: "POST",
-			headers,
+			headers: buildKimiHeaders(apiKey),
 			body: JSON.stringify(body),
 			signal,
 		});
 
 		const payload = await res.text();
 		if (!res.ok) {
-			const err = new Error(`Anthropic request failed (${res.status}): ${payload.slice(0, 500)}`);
+			const err = new Error(`Kimi request failed (${res.status}): ${payload.slice(0, 500)}`);
 			err.status = res.status;
 			throw err;
 		}
@@ -652,7 +500,7 @@ async function runAnthropicSearch({ model, apiKey, query, purpose, timeoutMs, ba
 		try {
 			parsed = JSON.parse(payload);
 		} catch {
-			throw new Error("Anthropic returned non-JSON response");
+			throw new Error("Kimi returned non-JSON response");
 		}
 
 		const texts = (parsed.content || [])
@@ -665,8 +513,7 @@ async function runAnthropicSearch({ model, apiKey, query, purpose, timeoutMs, ba
 		return text;
 	};
 
-	// Some Anthropic-compatible endpoints (e.g. kimi-coding) may not accept the
-	// web_search tool. Try it first; on 4xx fall back to plain chat.
+	// If the endpoint ever rejects the web_search tool, fall back to plain chat.
 	try {
 		const text = await attempt(true);
 		if (text) return text;
@@ -675,12 +522,8 @@ async function runAnthropicSearch({ model, apiKey, query, purpose, timeoutMs, ba
 	}
 
 	const plain = await attempt(false);
-	if (!plain) throw new Error("Anthropic returned no text content");
-	return plain + "\n\n[note] " + (isKimi ? "Kimi" : "Anthropic") + " endpoint did not accept the web_search tool; result is model knowledge only.";
-}
-
-function providerLabel(provider) {
-	return provider === "openai-codex" ? "openai-codex" : provider;
+	if (!plain) throw new Error("Kimi returned no text content");
+	return plain + "\n\n[note] Kimi endpoint did not accept the web_search tool; result is model knowledge only.";
 }
 
 async function main() {
@@ -699,21 +542,11 @@ async function main() {
 	const provider = pickProvider(args.provider, settings, auth);
 	const piAi = await loadPiAi();
 	const model = pickFastModel(provider, args.model, piAi);
-	const { apiKey, accountId } = await resolveApiKey(provider, auth, authPath, piAi);
+	const { apiKey } = await resolveApiKey(provider, auth, authPath, piAi);
 
 	let text;
 	let usedProvider = provider;
-	if (provider === "openai-codex") {
-		text = await runCodexSearch({
-			model: model.id,
-			apiKey,
-			accountId,
-			query: args.query,
-			purpose: args.purpose,
-			timeoutMs: args.timeoutMs,
-			baseUrl: model.baseUrl,
-		});
-	} else if (provider === "deepseek") {
+	if (provider === "deepseek") {
 		const result = await runDeepseekSearch({
 			model: model.id,
 			apiKey,
@@ -729,14 +562,12 @@ async function main() {
 			try {
 				const kimiModel = pickFastModel("kimi-coding", undefined, piAi);
 				const kimiCred = await resolveApiKey("kimi-coding", auth, authPath, piAi);
-				text = await runAnthropicSearch({
+				text = await runKimiSearch({
 					model: kimiModel.id,
 					apiKey: kimiCred.apiKey,
 					query: args.query,
 					purpose: args.purpose,
 					timeoutMs: args.timeoutMs,
-					baseUrl: "https://api.kimi.com/coding",
-					isKimi: true,
 				});
 				usedProvider = "kimi-coding";
 			} catch (err) {
@@ -745,18 +576,8 @@ async function main() {
 		} else if (!result.usedWebSearch) {
 			text += "\n\n[note] DeepSeek API does not support the web_search tool; result is model knowledge only.";
 		}
-	} else if (provider === "kimi-coding") {
-		text = await runAnthropicSearch({
-			model: model.id,
-			apiKey,
-			query: args.query,
-			purpose: args.purpose,
-			timeoutMs: args.timeoutMs,
-			baseUrl: "https://api.kimi.com/coding",
-			isKimi: true,
-		});
 	} else {
-		text = await runAnthropicSearch({
+		text = await runKimiSearch({
 			model: model.id,
 			apiKey,
 			query: args.query,
@@ -765,12 +586,14 @@ async function main() {
 		});
 	}
 
+	const usedModel = usedProvider === provider ? model.id : "k3";
+
 	if (args.json) {
 		console.log(
 			JSON.stringify(
 				{
-					provider: providerLabel(usedProvider),
-					model: usedProvider === provider ? model.id : (provider === "deepseek" ? "k3" : model.id),
+					provider: usedProvider,
+					model: usedModel,
 					query: args.query,
 					purpose: args.purpose,
 					result: text,
@@ -782,8 +605,8 @@ async function main() {
 		return;
 	}
 
-	console.log(`Provider: ${providerLabel(usedProvider)}`);
-	console.log(`Model: ${usedProvider === provider ? model.id : (provider === "deepseek" ? "k3" : model.id)}`);
+	console.log(`Provider: ${usedProvider}`);
+	console.log(`Model: ${usedModel}`);
 	console.log("");
 	console.log(text);
 }

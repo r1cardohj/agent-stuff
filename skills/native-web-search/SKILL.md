@@ -48,7 +48,7 @@ node search.mjs "HTTP/3 browser support comparison" --purpose "decide whether to
 
 Optional flags:
 
-- `--provider kimi-coding|deepseek|openai-codex|anthropic`
+- `--provider kimi-coding|deepseek`
 - `--model <model-id>`
 - `--timeout <ms>`
 - `--json`
@@ -61,8 +61,6 @@ Default provider is **kimi-coding** (`k3`), the only local credential with true 
 |----------|-------|-----------|------------|
 | `kimi-coding` (default) | `k3` | ✅ native | OAuth token in `~/.pi/agent/auth.json` |
 | `deepseek` | `deepseek-v4-flash` | ❌ (API only accepts `function` tools) | `DEEPSEEK_API_KEY` env var |
-| `openai-codex` | `gpt-5.4-mini` | ✅ native | ChatGPT OAuth |
-| `anthropic` | `claude-haiku-4-5` | ✅ native | Anthropic key / OAuth |
 
 Notes on behavior:
 
