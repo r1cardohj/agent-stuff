@@ -1,12 +1,12 @@
 /**
- * /mode — switch between agent, ask, and teach modes.
+ * One-command mode switching:
  *
- *   agent  default: full tools, normal behavior
- *   ask    read-only Q&A: answer questions and show code, no file writes
- *   teach  education mode: teach from first principles, step by step,
- *          with examples and code review (read-only, learner writes the code)
+ *   /yolo   full tools, unrestricted (default)
+ *   /ask    read-only Q&A: answer questions and show code, no file writes
+ *   /teach  education mode: teach from first principles, step by step,
+ *           with examples and code review (read-only, learner writes the code)
  *
- * Usage: /mode [agent|ask|teach]   (no args = show current mode)
+ * /mode is gone — use the dedicated commands: /yolo, /ask, /teach.
  * Start on: pi --mode ask
  */
 import { readFileSync } from "node:fs";
@@ -15,9 +15,9 @@ import { fileURLToPath } from "node:url";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { block, isSafeBash } from "../lib/bash.ts";
 
-type Mode = "agent" | "ask" | "teach";
+type Mode = "yolo" | "ask" | "teach";
 
-const MODES: Mode[] = ["agent", "ask", "teach"];
+const MODES: Mode[] = ["yolo", "ask", "teach"];
 
 const READONLY_TOOLS = ["read", "grep", "find", "ls", "bash"] as const;
 const WRITE_TOOLS = new Set(["write", "edit"]);
@@ -29,25 +29,30 @@ function loadPrompt(name: string): string {
   return readFileSync(join(PROMPT_DIR, `${name}.md`), "utf8").trim();
 }
 
+function normalizeMode(value: string): Mode | undefined {
+  if (value === "agent") return "yolo"; // legacy alias
+  return (MODES as string[]).includes(value) ? (value as Mode) : undefined;
+}
+
 export default function (pi: ExtensionAPI) {
-  let mode: Mode = "agent";
+  let mode: Mode = "yolo";
   let toolsBefore: string[] | undefined;
 
   pi.registerFlag("mode", {
-    description: "Start in a mode (agent|ask|teach)",
+    description: "Start in a mode (yolo|ask|teach)",
     type: "string",
-    default: "agent",
+    default: "yolo",
   });
 
   function setStatus(ctx: ExtensionContext) {
     ctx.ui.setStatus(
       "mode",
-      mode === "agent" ? undefined : ctx.ui.theme.fg("warning", mode),
+      mode === "yolo" ? undefined : ctx.ui.theme.fg("warning", mode),
     );
   }
 
   function applyTools() {
-    if (mode === "agent") {
+    if (mode === "yolo") {
       pi.setActiveTools(toolsBefore ?? DEFAULT_TOOLS);
       toolsBefore = undefined;
     } else {
@@ -68,58 +73,48 @@ export default function (pi: ExtensionAPI) {
     applyTools();
     setStatus(ctx);
     const notes: Record<Mode, string> = {
-      agent: "Agent mode — full tools restored",
+      yolo: "Yolo mode — full tools, no restrictions",
       ask: "Ask mode — read-only (no write/edit)",
       teach: "Teach mode — step-by-step learning, read-only",
     };
     ctx.ui.notify(notes[mode], "info");
   }
 
-  pi.registerCommand("mode", {
-    description: "Switch mode: agent | ask | teach",
-    handler: async (args, ctx) => {
-      const a = args?.trim() as Mode | undefined;
-      if (!a) {
-        if (!ctx.hasUI) {
-          ctx.ui.notify(
-            `Current mode: ${mode}\nUsage: /mode agent | ask | teach`,
-            "info",
-          );
-          return;
-        }
-        const labels: Record<Mode, string> = {
-          agent: "agent — default, full tools",
-          ask: "ask — read-only Q&A",
-          teach: "teach — first-principles learning, examples + code review",
-        };
-        const options = MODES.map(
-          (m) => `${m === mode ? "● " : "○ "}${labels[m]}`,
-        );
-        const choice = await ctx.ui.select(`Select mode (current: ${mode})`, options);
-        if (!choice) return;
-        const picked = MODES[options.indexOf(choice)];
-        if (picked) setMode(picked, ctx);
-        return;
-      }
-      if (!MODES.includes(a)) {
-        ctx.ui.notify(`Unknown mode: ${a}. Use agent | ask | teach`, "error");
-        return;
-      }
-      setMode(a, ctx);
-    },
-    getArgumentCompletions: (prefix) =>
-      MODES.filter((m) => m.startsWith(prefix)).map((m) => ({
-        value: m,
-        label: m,
-      })),
-  });
+  function registerModeCommand(
+    name: string,
+    target: Mode,
+    description: string,
+  ) {
+    pi.registerCommand(name, {
+      description,
+      handler: async (_args, ctx) => {
+        setMode(target, ctx);
+      },
+    });
+  }
+
+  registerModeCommand(
+    "yolo",
+    "yolo",
+    "Switch to yolo mode — full tools, no restrictions",
+  );
+  registerModeCommand(
+    "ask",
+    "ask",
+    "Switch to ask mode — read-only Q&A",
+  );
+  registerModeCommand(
+    "teach",
+    "teach",
+    "Switch to teach mode — first-principles learning, examples + code review",
+  );
 
   pi.on("tool_call", async (event) => {
-    if (mode === "agent") return;
+    if (mode === "yolo") return;
 
     if (WRITE_TOOLS.has(event.toolName)) {
       return block(
-        `pi-agent-stuff ${mode} mode: write/edit are disabled. Tell the user to type /mode agent in pi to switch back. Do not invent other slash commands.`,
+        `pi-agent-stuff ${mode} mode: write/edit are disabled. Tell the user to type /yolo in pi to switch back. Do not invent other slash commands.`,
       );
     }
 
@@ -127,23 +122,26 @@ export default function (pi: ExtensionAPI) {
       const command = String((event.input as { command?: string }).command ?? "");
       if (!isSafeBash(command)) {
         return block(
-          `pi-agent-stuff ${mode} mode: bash not allowlisted (read-only only).\nCommand: ${command}\nUser can switch back with /mode agent.`,
+          `pi-agent-stuff ${mode} mode: bash not allowlisted (read-only only).\nCommand: ${command}\nUser can switch back with /yolo.`,
         );
       }
     }
   });
 
   pi.on("before_agent_start", async (event) => {
-    if (mode === "agent") return;
+    if (mode === "yolo") return;
     return { systemPrompt: `${event.systemPrompt}\n\n${loadPrompt(mode)}` };
   });
 
   pi.on("session_start", async (_event, ctx) => {
     const flag = pi.getFlag("mode");
-    if (typeof flag === "string" && MODES.includes(flag as Mode) && flag !== "agent") {
-      setMode(flag as Mode, ctx);
-    } else {
-      setStatus(ctx);
+    if (typeof flag === "string") {
+      const normalized = normalizeMode(flag);
+      if (normalized && normalized !== "yolo") {
+        setMode(normalized, ctx);
+        return;
+      }
     }
+    setStatus(ctx);
   });
 }

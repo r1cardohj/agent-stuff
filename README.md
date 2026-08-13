@@ -8,7 +8,7 @@ Personal [Pi](https://pi.dev) package: extensions, skills, and prompts.
 | Path | Role |
 |------|------|
 | `extensions/itsdangerous.ts` | Block / confirm dangerous bash commands |
-| `extensions/mode.ts` | `/mode` switch between agent / ask / teach modes |
+| `extensions/mode.ts` | `/ask` `/teach` `/yolo` — one-key mode switching (read-only Q&A / teaching / full tools) |
 | `extensions/mode/*.md` | System prompts for ask / teach modes (edit to tweak behavior) |
 | `extensions/split.ts` | `/split v\|h` fork session into a new Windows Terminal pane |
 | `extensions/answer.ts` | `/answer` extract questions from last assistant message into interactive Q&A |
@@ -17,14 +17,13 @@ Personal [Pi](https://pi.dev) package: extensions, skills, and prompts.
 | `skills/` | Skills for the model (add `*/SKILL.md`) |
 | `prompts/` | Prompt templates (add `*.md`) |
 
-### /mode
+### /ask /teach /yolo
 
 ```text
-/mode         # interactive picker UI (TUI), or show current mode without UI
-/mode agent   # default: full tools
-/mode ask     # read-only Q&A
-/mode teach   # education mode: first-principles, step-by-step, examples + code review
-pi --mode ask # start in a specific mode
+/yolo    # full tools, unrestricted (default)
+/ask     # read-only Q&A: answer questions and show code, no file writes
+/teach   # education mode: first-principles, step-by-step, examples + code review
+pi --mode ask # start in a specific mode (yolo|ask|teach)
 ```
 
 `ask` and `teach` are read-only: active tools are `read`, `grep`, `find`, `ls`, `bash` (read-only allowlist). Model should answer in chat with code fences, not edit files.

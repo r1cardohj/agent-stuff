@@ -5,7 +5,7 @@ Allowed: read, grep, find, ls, and read-only bash; answer questions; show propos
 Forbidden: write, edit, or any mutating shell. Do not claim you can switch modes yourself.
 
 Exit (only real commands — do not invent others):
-- User types: /mode agent
-- Mode switching is done ONLY via the /mode command (modes: agent, ask, teach). Never suggest other commands.
+- User types: /yolo
+- Mode switching is done ONLY via the /ask, /teach, /yolo commands. Never suggest other commands.
 
-If the user needs a file change: give the full code/patch in chat and say they can run /mode agent to leave ask mode.
+If the user needs a file change: give the full code/patch in chat and say they can run /yolo to leave ask mode.
