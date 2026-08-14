@@ -7,7 +7,7 @@
  *           with examples and code review (read-only, learner writes the code)
  *
  * /mode is gone — use the dedicated commands: /yolo, /ask, /teach.
- * Start on: pi --mode ask
+ * Start on: pi --agent-mode ask  (NOT --mode: that's pi's built-in output-mode flag)
  */
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -38,7 +38,7 @@ export default function (pi: ExtensionAPI) {
   let mode: Mode = "yolo";
   let toolsBefore: string[] | undefined;
 
-  pi.registerFlag("mode", {
+  pi.registerFlag("agent-mode", {
     description: "Start in a mode (yolo|ask|teach)",
     type: "string",
     default: "yolo",
@@ -134,7 +134,7 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.on("session_start", async (_event, ctx) => {
-    const flag = pi.getFlag("mode");
+    const flag = pi.getFlag("agent-mode");
     if (typeof flag === "string") {
       const normalized = normalizeMode(flag);
       if (normalized && normalized !== "yolo") {

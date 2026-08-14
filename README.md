@@ -23,7 +23,7 @@ Personal [Pi](https://pi.dev) package: extensions, skills, and prompts.
 /yolo    # full tools, unrestricted (default)
 /ask     # read-only Q&A: answer questions and show code, no file writes
 /teach   # education mode: first-principles, step-by-step, examples + code review
-pi --mode ask # start in a specific mode (yolo|ask|teach)
+pi --agent-mode ask # start in a specific mode (yolo|ask|teach); NOT --mode (built-in output flag)
 ```
 
 `ask` and `teach` are read-only: active tools are `read`, `grep`, `find`, `ls`, `bash` (read-only allowlist). Model should answer in chat with code fences, not edit files.
