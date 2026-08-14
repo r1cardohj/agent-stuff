@@ -24,7 +24,8 @@
       "./extensions/mode.ts",
       "./extensions/split.ts",
       "./extensions/answer.ts",
-			"./extensions/files.ts"
+			"./extensions/files.ts",
+			"./extensions/misslee.ts"
     ],
     "skills": [
       "./skills"

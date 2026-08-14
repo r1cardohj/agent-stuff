@@ -12,6 +12,7 @@ Personal [Pi](https://pi.dev) package: extensions, skills, and prompts.
 | `extensions/mode/*.md` | System prompts for ask / teach modes (edit to tweak behavior) |
 | `extensions/split.ts` | `/split v\|h` fork session into a new Windows Terminal pane |
 | `extensions/answer.ts` | `/answer` extract questions from last assistant message into interactive Q&A |
+| `extensions/misslee.ts` | `/misslee` Chinese ↔ English helper: idiomatic translations + grammar/style review |
 | `extensions/files.ts` | `/files` browse git-tracked + session-referenced files (Ctrl+Shift+O / Ctrl+Shift+R) |
 | `lib/bash.ts` | Shared bash allow/deny helpers (not an extension entry) |
 | `skills/` | Skills for the model (add `*/SKILL.md`) |
@@ -33,6 +34,18 @@ pi --agent-mode ask # start in a specific mode (yolo|ask|teach); NOT --mode (bui
 - **Deny:** recursive `rm`, `curl\|sh` / `wget\|sh`, `dd` / `mkfs` / `mkswap`
 - **Ask** (TUI): `sudo`, `git push --force`, `git reset --hard`
 - No UI (`-p` / JSON): ask rules also deny
+
+### /misslee
+
+```text
+/misslee 吃饭了吗          # Chinese → 2-3 idiomatic English versions with usage notes
+/misslee Have you had your meal?   # English → review in Chinese: grammar, word choice,
+                                   # plus more natural alternatives
+```
+
+Detects whether your input contains Chinese characters and picks the direction automatically.
+
+> Named after my high school English teacher, Miss Lee. 🍎
 
 ## Develop
 
