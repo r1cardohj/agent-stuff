@@ -23,10 +23,10 @@
     "extensions": [
       "./extensions/itsdangerous.ts",
       "./extensions/mode.ts",
-      "./extensions/split.ts",
       "./extensions/answer.ts",
-			"./extensions/files.ts",
-			"./extensions/misslee.ts"
+      "./extensions/files.ts",
+      "./extensions/misslee.ts",
+      "./extensions/review.ts"
     ],
     "skills": [
       "./skills"
