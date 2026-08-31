@@ -13,9 +13,11 @@ Personal [Pi](https://pi.dev) package: extensions, skills, and prompts.
 | `extensions/answer.ts` | `/answer` extract questions from last assistant message into interactive Q&A |
 | `extensions/misslee.ts` | `/misslee` Chinese ↔ English helper: idiomatic translations + grammar/style review |
 | `extensions/files.ts` | `/files` browse git-tracked + session-referenced files (Ctrl+Shift+O / Ctrl+Shift+R) |
+| `extensions/review.ts` | `/review` code review (PR / branch / commit / uncommitted / folder) + `/end-review` |
 | `lib/bash.ts` | Shared bash allow/deny helpers (not an extension entry) |
-| `skills/` | Skills for the model (add `*/SKILL.md`) |
+| `skills/` | Skills for the model: `commit`, `github`, `summarize` |
 | `prompts/` | Prompt templates (add `*.md`) |
+| `themes/` | `tokyonight_moon` theme |
 
 ### /ask /teach /yolo
 
@@ -45,6 +47,23 @@ pi --agent-mode ask # start in a specific mode (yolo|ask|teach); NOT --mode (bui
 Detects whether your input contains Chinese characters and picks the direction automatically.
 
 > Named after my high school English teacher, Miss Lee. 🍎
+
+### /review
+
+```text
+/review                          # interactive selector (smart default based on git state)
+/review uncommitted              # staged + unstaged + untracked changes
+/review branch main              # diff against a base branch (merge-base)
+/review commit abc123            # a specific commit
+/review pr 123                   # GitHub PR (checks it out locally; needs gh + clean tree)
+/review folder src docs          # snapshot review of paths (not a diff)
+/review branch main --extra "focus on performance"   # extra instruction, any mode
+/end-review                      # finish: return only / return + fix findings / return + summarize
+```
+
+- Prioritized findings ([P0]–[P3]) + verdict, with tab completion for subcommands, branches, and commits
+- Selector can toggle **loop fixing** (review → auto-fix → re-review, up to 10 passes) and **custom review instructions**
+- Optional `REVIEW_GUIDELINES.md` next to `.pi/` is appended to every review prompt
 
 ## Develop
 
