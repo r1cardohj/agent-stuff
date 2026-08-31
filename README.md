@@ -10,7 +10,6 @@ Personal [Pi](https://pi.dev) package: extensions, skills, and prompts.
 | `extensions/itsdangerous.ts` | Block / confirm dangerous bash commands |
 | `extensions/mode.ts` | `/ask` `/teach` `/yolo` — one-key mode switching (read-only Q&A / teaching / full tools) |
 | `extensions/mode/*.md` | System prompts for ask / teach modes (edit to tweak behavior) |
-| `extensions/split.ts` | `/split v\|h` fork session into a new Windows Terminal pane |
 | `extensions/answer.ts` | `/answer` extract questions from last assistant message into interactive Q&A |
 | `extensions/misslee.ts` | `/misslee` Chinese ↔ English helper: idiomatic translations + grammar/style review |
 | `extensions/files.ts` | `/files` browse git-tracked + session-referenced files (Ctrl+Shift+O / Ctrl+Shift+R) |
