@@ -26,7 +26,8 @@
       "./extensions/answer.ts",
       "./extensions/files.ts",
       "./extensions/misslee.ts",
-      "./extensions/review.ts"
+      "./extensions/review.ts",
+      "./extensions/websearch.ts"
     ],
     "skills": [
       "./skills"
