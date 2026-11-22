@@ -17,6 +17,7 @@ Personal [Pi](https://pi.dev) package: extensions, skills, and prompts.
 | `extensions/commit.ts` | `/commit` (commit only) and `/commitpush` / `/cp` (commit + push), per commit skill |
 | `extensions/continue.ts` | `/continue` send "continue" when the agent is idle |
 | `extensions/websearch.ts` | `search` tool: DeepSeek Search API, reads pi's stored deepseek key |
+| `extensions/fetch.ts` | `fetch` tool: download a URL, return Markdown via Defuddle (HTML) or plain text |
 | `extensions/uv.ts` | Redirects Python tooling to uv: blocks legacy commands in bash with uv equivalents |
 | `intercepted-commands/` | PATH shims used by the uv extension |
 | `extensions/btw.ts` | `/btw` side-chat popover: ask side questions, optionally summarize into main chat |
@@ -91,6 +92,14 @@ Model-callable `search` tool backed by DeepSeek's Search API. Credentials resolv
 from `DEEPSEEK_API_KEY`, falling back to the `deepseek` key pi stores via `/login`
 (including `!command` keys). The `websearch` skill documents query operators
 (`site:`, `"..."`, `lang:`, `after:`) and result triage; it loads on demand.
+
+### fetch
+
+Model-callable `fetch` tool: downloads a URL with undici (env-proxy aware via
+`EnvHttpProxyAgent`, retries on 429/5xx, 20MB cap) and returns bounded Markdown.
+HTML extraction uses Defuddle (`defuddle/node`); JSON/source/raw text is returned
+as-is with charset detection. Output truncates at 12k chars by default
+(`max_chars` parameter, 50k cap). Ported from agent7's `web_fetch.py`.
 
 ### uv extension + skill
 

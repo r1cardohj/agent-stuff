@@ -35,7 +35,8 @@
       "./extensions/continue.ts",
       "./extensions/notify.ts",
       "./extensions/unified-edit.ts",
-      "./extensions/subagent.ts"
+      "./extensions/subagent.ts",
+      "./extensions/fetch.ts"
     ],
     "skills": [
       "./skills"
@@ -54,5 +55,10 @@
   },
   "devDependencies": {
     "@types/node": "^26.2.0"
+  },
+  "dependencies": {
+    "defuddle": "^0.19.13",
+    "jsdom": "^31.0.1",
+    "undici": "^8.13.1"
   }
 }
