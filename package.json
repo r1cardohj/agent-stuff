@@ -31,7 +31,8 @@
       "./extensions/review.ts",
       "./extensions/websearch.ts",
       "./extensions/uv.ts",
-      "./extensions/btw.ts"
+      "./extensions/btw.ts",
+      "./extensions/continue.ts"
     ],
     "skills": [
       "./skills"
