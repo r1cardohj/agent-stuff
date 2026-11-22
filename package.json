@@ -30,7 +30,8 @@
       "./extensions/misslee.ts",
       "./extensions/review.ts",
       "./extensions/websearch.ts",
-      "./extensions/uv.ts"
+      "./extensions/uv.ts",
+      "./extensions/btw.ts"
     ],
     "skills": [
       "./skills"
