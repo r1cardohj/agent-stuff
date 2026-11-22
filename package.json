@@ -34,7 +34,8 @@
       "./extensions/btw.ts",
       "./extensions/continue.ts",
       "./extensions/notify.ts",
-      "./extensions/unified-edit.ts"
+      "./extensions/unified-edit.ts",
+      "./extensions/subagent.ts"
     ],
     "skills": [
       "./skills"
