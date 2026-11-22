@@ -32,7 +32,9 @@
       "./extensions/websearch.ts",
       "./extensions/uv.ts",
       "./extensions/btw.ts",
-      "./extensions/continue.ts"
+      "./extensions/continue.ts",
+      "./extensions/notify.ts",
+      "./extensions/unified-edit.ts"
     ],
     "skills": [
       "./skills"
