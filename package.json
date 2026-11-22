@@ -22,6 +22,7 @@
   "pi": {
     "extensions": [
       "./extensions/itsdangerous.ts",
+      "./extensions/commit.ts",
       "./extensions/mode.ts",
       "./extensions/answer.ts",
       "./extensions/files.ts",
