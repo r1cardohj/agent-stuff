@@ -19,6 +19,7 @@ Personal [Pi](https://pi.dev) package: extensions, skills, and prompts.
 | `extensions/websearch.ts` | `search` tool: DeepSeek Search API, reads pi's stored deepseek key |
 | `extensions/fetch.ts` | `fetch` tool: download a URL, return Markdown via Defuddle (HTML) or plain text |
 | `extensions/comment-rules.ts` | Appends `lib/comments.md` comment conventions to the system prompt every turn |
+| `extensions/auto-route.ts` | `router/auto` virtual model: intent scoring + failover across configured models |
 | `extensions/uv.ts` | Redirects Python tooling to uv: blocks legacy commands in bash with uv equivalents |
 | `intercepted-commands/` | PATH shims used by the uv extension |
 | `extensions/btw.ts` | `/btw` side-chat popover: ask side questions, optionally summarize into main chat |

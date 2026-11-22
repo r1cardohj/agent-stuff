@@ -341,7 +341,7 @@ export default function (pi: ExtensionAPI) {
 		if (!text) return [];
 		try {
 			const md = new Markdown(text, 0, 0, mdTheme);
-			return md.render(width);
+			return [...md.render(width)];
 		} catch {
 			// Fall back to plain text wrapping if Markdown rendering fails
 			return text.split("\n").flatMap((line) => {
