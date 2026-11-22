@@ -34,6 +34,8 @@ const POLL_INTERVAL_MS = 500;
 const PANE_PREVIEW_LINES = 18;
 const CAPTURE_LINES = 100;
 const THINKING_LEVELS = ["off", "minimal", "low", "medium", "high", "xhigh", "max"] as const;
+/** Default subagent models (provider/model), chosen at random per call when PI_SUBAGENT_MODEL is unset. */
+const DEFAULT_SUBAGENT_MODELS = ["kimi-coding/kimi-for-coding", "deepseek/deepseek-flash"];
 const EXTENSION_PATH = fileURLToPath(import.meta.url);
 
 type RunStatus = "queued" | "running" | "completed" | "failed";
@@ -293,6 +295,7 @@ function resolveModel(
 	let provider = explicitProvider || ctx.model?.provider || "";
 	let model = explicitModel || ctx.model?.id || "";
 
+	// "provider/model" form supplies both parts at once.
 	const slashIndex = explicitModel?.indexOf("/") ?? -1;
 	if (explicitModel && slashIndex > 0) {
 		const modelProvider = explicitModel.slice(0, slashIndex);
@@ -301,6 +304,25 @@ function resolveModel(
 			model = explicitModel.slice(slashIndex + 1);
 		} else if (explicitProvider === modelProvider) {
 			model = explicitModel.slice(slashIndex + 1);
+		}
+	}
+
+	// With no explicit override, choose a default subagent model instead of
+	// inheriting the main agent's (usually pricier) model: candidates come from
+	// PI_SUBAGENT_MODEL (comma-separated "provider/model" entries), falling back
+	// to DEFAULT_SUBAGENT_MODELS, picked at random per call.
+	if (!explicitProvider && !explicitModel) {
+		const configured = process.env.PI_SUBAGENT_MODEL?.split(",")
+			.map((entry) => entry.trim())
+			.filter(Boolean);
+		const candidates = configured && configured.length > 0 ? configured : DEFAULT_SUBAGENT_MODELS;
+		const pick = candidates[Math.floor(Math.random() * candidates.length)] ?? "";
+		const pickSlash = pick.indexOf("/");
+		if (pickSlash > 0) {
+			provider = pick.slice(0, pickSlash);
+			model = pick.slice(pickSlash + 1);
+		} else if (pick) {
+			model = pick;
 		}
 	}
 
@@ -367,7 +389,7 @@ export default function subagentExtension(pi: ExtensionAPI): void {
 		name: "subagent",
 		label: "Subagent",
 		description:
-			"Run one delegated task in a separate interactive Pi process inside a herdr-managed terminal. Calls are serialized: only one child works at a time, even if several calls are requested together. The child inherits the current provider, model, and thinking level unless overridden. Attach with `hc attach` or inspect with `hc read` while it runs. Output is capped at 50KB or 2000 lines; the complete child session is preserved on disk.",
+			"Run one delegated task in a separate interactive Pi process inside a herdr-managed terminal. Calls are serialized: only one child works at a time, even if several calls are requested together. By default the child runs on a randomly chosen model from PI_SUBAGENT_MODEL (comma-separated provider/model entries) or, when that env var is unset, a built-in default list (kimi-coding/kimi-for-coding or deepseek/deepseek-flash); the thinking level is inherited. Pass provider, model, and thinking to override per call. Attach with `hc attach` or inspect with `hc read` while it runs. Output is capped at 50KB or 2000 lines; the complete child session is preserved on disk.",
 		promptSnippet: "Run one delegated task in an observable, herdr-backed Pi session",
 		promptGuidelines: [
 			"Use subagent once per delegated task; subagent calls are serialized automatically, so prefer multiple simple calls over asking one child to orchestrate other children.",
@@ -375,9 +397,9 @@ export default function subagentExtension(pi: ExtensionAPI): void {
 		parameters: Type.Object({
 			task: Type.String({ description: "The complete task for the child Pi process" }),
 			cwd: Type.Optional(Type.String({ description: "Working directory. Defaults to the current project." })),
-			provider: Type.Optional(Type.String({ description: "Provider override. Defaults to the current provider." })),
+			provider: Type.Optional(Type.String({ description: "Provider override. Defaults to a random PI_SUBAGENT_MODEL candidate." })),
 			model: Type.Optional(
-				Type.String({ description: "Model id or provider/model override. Defaults to the current model." }),
+				Type.String({ description: "Model id or provider/model override. Defaults to a random PI_SUBAGENT_MODEL candidate." }),
 			),
 			thinking: Type.Optional(
 				StringEnum(THINKING_LEVELS, {
