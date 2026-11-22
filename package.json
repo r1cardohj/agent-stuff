@@ -36,7 +36,8 @@
       "./extensions/notify.ts",
       "./extensions/unified-edit.ts",
       "./extensions/subagent.ts",
-      "./extensions/fetch.ts"
+      "./extensions/fetch.ts",
+      "./extensions/comment-rules.ts"
     ],
     "skills": [
       "./skills"
