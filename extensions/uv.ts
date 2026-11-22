@@ -28,7 +28,18 @@ import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const interceptedCommandsPath = join(__dirname, "..", "intercepted-commands");
 
+/**
+ * Remove single- and double-quoted segments (handling backslash escapes, even
+ * across newlines) so patterns only see actual shell syntax. Quoted text is
+ * data — e.g. a commit message mentioning legacy tool names must not trigger
+ * the interceptors.
+ */
+function stripQuoted(command: string): string {
+  return command.replace(/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/g, '""');
+}
+
 function getBlockedCommandMessage(command: string): string | null {
+  command = stripQuoted(command);
   // Match commands at the start of a shell segment (start/newline/; /&& /|| /|)
   const pipCommandPattern = /(?:^|\n|[;|&]{1,2})\s*(?:\S+\/)?pip\s*(?:$|\s)/m;
   const pip3CommandPattern = /(?:^|\n|[;|&]{1,2})\s*(?:\S+\/)?pip3\s*(?:$|\s)/m;
