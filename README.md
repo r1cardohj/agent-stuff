@@ -20,8 +20,12 @@ Personal [Pi](https://pi.dev) package: extensions, skills, and prompts.
 | `extensions/uv.ts` | Redirects Python tooling to uv: blocks legacy commands in bash with uv equivalents |
 | `intercepted-commands/` | PATH shims used by the uv extension |
 | `extensions/btw.ts` | `/btw` side-chat popover: ask side questions, optionally summarize into main chat |
+| `extensions/subagent.ts` | `subagent` tool: run delegated tasks in a herdr-managed Pi session |
+| `extensions/notify.ts` | Desktop notification (OSC 777) when a run ends and waits for input |
+| `extensions/unified-edit.ts` | Replaces built-in `edit` with row-script / patch style editing |
+| `skills/herdr/` | `herdr-background-runs` skill for long tests/builds/services via `hc` |
 | `lib/bash.ts` | Shared bash allow/deny helpers (not an extension entry) |
-| `skills/` | Skills for the model: `commit`, `github`, `summarize`, `uv`, `web-browser`, `websearch` |
+| `skills/` | Skills for the model: `commit`, `github`, `herdr-background-runs`, `summarize`, `uv`, `web-browser`, `websearch` |
 | `prompts/` | Prompt templates (add `*.md`) |
 | `themes/` | `tokyonight_moon` theme |
 
@@ -102,6 +106,34 @@ Drive Chrome/Chromium over the Chrome DevTools Protocol: `start.js` (prefer
 consent dismissal, console/network logs. Auto-detects WSL and falls back to the
 Windows host's Chrome via interop (stopping uses CDP `Browser.close`).
 
+### subagent (herdr)
+
+`subagent` tool: run a delegated task in a separate Pi process inside a herdr-managed
+terminal (`hc run --bg`). By default the child runs on a randomly chosen model from
+`PI_SUBAGENT_MODEL` (comma-separated candidates) or a built-in default list
+(`kimi-coding/kimi-for-coding` or `deepseek/deepseek-flash`); provider/model/thinking
+are overridable per call, and thinking defaults to the main session's level. Calls are serialized,
+output streams back via `hc read`, and you can attach with `hc attach`. When the child
+settles, its result is captured and returned to the main conversation.
+
+### herdr background runs
+
+The `herdr-background-runs` skill teaches the model to use `hc run --bg --no-notify`
+for long tests, builds, or services, then `hc wait`, `hc read`, and `hc rm`/`hc kill`
+to collect results and clean up. Use it for anything expected to take over ~60 seconds.
+
+### notify
+
+Sends a native desktop notification via the OSC 777 escape sequence when the agent
+finishes a run and is waiting for input. Supported terminals include Ghostty, iTerm2,
+WezTerm, and rxvt-unicode.
+
+### unified-edit
+
+Replaces the built-in `edit` tool with a single `text` parameter that accepts either
+a marked row script (`[file]`, `@REPLACE`/`@INS.*`/`@DEL`/`@APPEND`, `+`/`-` lines)
+or a Codex-style patch. Uses pi's edit matcher and the shared file mutation queue.
+
 ### /btw
 
 `/btw` opens a side-chat popover seeded with main-conversation context, running
@@ -114,3 +146,4 @@ main chat. `/btw <question>` asks directly without opening the popover.
 1. Edit files under `extensions/`, `skills/`, or `prompts/`
 2. In pi: `/reload`
 3. To add another extension, create `extensions/foo.ts` and list it in `package.json` → `pi.extensions`
+
