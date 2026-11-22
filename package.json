@@ -13,6 +13,7 @@
   "type": "module",
   "files": [
     "extensions",
+    "intercepted-commands",
     "lib",
     "skills",
     "prompts",
@@ -28,7 +29,8 @@
       "./extensions/files.ts",
       "./extensions/misslee.ts",
       "./extensions/review.ts",
-      "./extensions/websearch.ts"
+      "./extensions/websearch.ts",
+      "./extensions/uv.ts"
     ],
     "skills": [
       "./skills"
