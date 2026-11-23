@@ -152,6 +152,17 @@ on the active model with read/bash/edit/write tools. Threads persist across
 session restore and tree navigation; closing can summarize the thread into the
 main chat. `/btw <question>` asks directly without opening the popover.
 
+### /pr
+
+```text
+/pr                              # create a PR for the current changes (title picked from the diff)
+/pr fix the flaky login test     # use this as the PR title
+```
+
+Reviews the diff, cuts a branch off the default branch if you're on it (kebab-case slug from the title),
+commits per the commit skill, pushes, and opens the PR with `gh pr create`. Refuses to duplicate an
+existing open PR for the current branch.
+
 ## Develop
 
 1. Edit files under `extensions/`, `skills/`, or `prompts/`

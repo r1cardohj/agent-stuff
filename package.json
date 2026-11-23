@@ -24,6 +24,7 @@
     "extensions": [
       "./extensions/itsdangerous.ts",
       "./extensions/commit.ts",
+      "./extensions/pr.ts",
       "./extensions/mode.ts",
       "./extensions/answer.ts",
       "./extensions/files.ts",
