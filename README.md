@@ -25,7 +25,6 @@ Personal [Pi](https://pi.dev) package: extensions, skills, and prompts.
 | `extensions/btw.ts` | `/btw` side-chat popover: ask side questions, optionally summarize into main chat |
 | `extensions/subagent.ts` | `subagent` tool: run delegated tasks in a herdr-managed Pi session |
 | `extensions/notify.ts` | Desktop notification (OSC 777) when a run ends and waits for input |
-| `extensions/unified-edit.ts` | Replaces built-in `edit` with row-script / patch style editing |
 | `skills/herdr/` | `herdr-background-runs` skill for long tests/builds/services via `hc` |
 | `lib/bash.ts` | Shared bash allow/deny helpers (not an extension entry) |
 | `skills/` | Skills for the model: `commit`, `github`, `herdr-background-runs`, `summarize`, `uv`, `web-browser`, `websearch` |
@@ -138,12 +137,6 @@ to collect results and clean up. Use it for anything expected to take over ~60 s
 Sends a native desktop notification via the OSC 777 escape sequence when the agent
 finishes a run and is waiting for input. Supported terminals include Ghostty, iTerm2,
 WezTerm, and rxvt-unicode.
-
-### unified-edit
-
-Replaces the built-in `edit` tool with a single `text` parameter that accepts either
-a marked row script (`[file]`, `@REPLACE`/`@INS.*`/`@DEL`/`@APPEND`, `+`/`-` lines)
-or a Codex-style patch. Uses pi's edit matcher and the shared file mutation queue.
 
 ### /btw
 
