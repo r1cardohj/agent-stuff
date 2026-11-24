@@ -73,9 +73,9 @@ export default function (pi: ExtensionAPI) {
       const lines = todos.map((item) => {
         const text = item.text.length > 60 ? `${item.text.slice(0, 57)}...` : item.text;
         if (item.completed) {
-          return ctx.ui.theme.fg("success", "☑ ") + ctx.ui.theme.fg("muted", ctx.ui.theme.strikethrough(text));
+          return ctx.ui.theme.fg("success", "[x] ") + ctx.ui.theme.fg("muted", ctx.ui.theme.strikethrough(text));
         }
-        return `${ctx.ui.theme.fg("muted", "☐ ")}${text}`;
+        return `${ctx.ui.theme.fg("muted", "[ ] ")}${text}`;
       });
       ctx.ui.setWidget("plan-todos", lines);
     } else {
@@ -180,7 +180,7 @@ export default function (pi: ExtensionAPI) {
         return;
       }
       const list = todos
-        .map((item, i) => `${i + 1}. ${item.completed ? "✓" : "○"} ${item.text}`)
+        .map((item, i) => `${i + 1}. ${item.completed ? "[x]" : "[ ]"} ${item.text}`)
         .join("\n");
       ctx.ui.notify(`Plan progress:\n${list}`, "info");
     },
@@ -264,7 +264,7 @@ After completing a step, include a [DONE:n] tag in your response.`;
     if (todos.length === 0) return;
     persist();
 
-    const todoListText = todos.map((t, i) => `${i + 1}. ☐ ${t.text}`).join("\n");
+    const todoListText = todos.map((t, i) => `${i + 1}. [ ] ${t.text}`).join("\n");
     const planCard = {
       customType: "plan-todo-list",
       content: `**Plan Steps (${todos.length}):**\n\n${todoListText}`,
