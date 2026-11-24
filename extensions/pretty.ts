@@ -51,6 +51,7 @@ let statsCache: { key: string; input: number; output: number; cost: number } | u
 const BOLD_ON = "\x1b[1m";
 const BOLD_OFF = "\x1b[22m";
 
+const MOON_FRAMES = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"];
 function parseFgAnsi(prefix: string): Color | undefined {
 	const matches = [...prefix.matchAll(/\x1b\[(?:38;2;(\d+);(\d+);(\d+)|38;5;(\d+)|([39][0-7]))m/g)];
 	const m = matches[matches.length - 1];
@@ -276,6 +277,31 @@ function install(pi: ExtensionAPI, ctx: ExtensionContext): void {
 		};
 	});
 	ctx.ui.setEditorComponent((tui, theme, keybindings) => new PrettyEditor(tui, theme, keybindings, ctx));
+
+	ctx.ui.setWorkingIndicator({ frames: MOON_FRAMES, intervalMs: 160 });
+
+	ctx.ui.setHeader((_tui, theme) => ({
+		invalidate() {},
+		render(width: number): string[] {
+			const project = ctx.cwd.split("/").pop() || ctx.cwd;
+			const name = ctx.sessionManager.getSessionName();
+			const model = ctx.model
+				? `${ctx.model.id}${ctx.model.reasoning ? ` · ${ctx.thinkingLevel ?? pi.getThinkingLevel()}` : ""}`
+				: "no-model";
+			const title = fitLine(
+				theme.style(STYLE.icon, { fg: STYLE.glow, bold: true }) +
+					" " +
+					theme.fg("muted", project) +
+					(name ? theme.fg("dim", ` ${STYLE.sep} ${name}`) : ""),
+				theme.fg("dim", model),
+				width,
+			);
+			const ansi = gradientAnsi(theme, theme.colors.border, theme.colors[STYLE.glow], width, "header");
+			let rule = BOLD_ON;
+			for (let i = 0; i < width; i++) rule += ansi[i] + "─";
+			return [title, rule + "\x1b[22;39m"];
+		},
+	}));
 }
 
 export default function (pi: ExtensionAPI) {

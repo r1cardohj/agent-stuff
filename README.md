@@ -25,7 +25,7 @@ Personal [Pi](https://pi.dev) package: extensions, skills, and prompts.
 | `extensions/btw.ts` | `/btw` side-chat popover: ask side questions, optionally summarize into main chat |
 | `extensions/subagent.ts` | `subagent` tool: run delegated tasks in a herdr-managed Pi session |
 | `extensions/notify.ts` | Desktop notification (OSC 777) when a run ends and waits for input |
-| `extensions/pretty.ts` | Fixed neon styling: rounded gradient editor border + padded content, custom footer with context bar |
+| `extensions/pretty.ts` | Neon styling: rounded gradient editor frame, custom footer, moon-phase spinner, header banner |
 | `skills/herdr/` | `herdr-background-runs` skill for long tests/builds/services via `hc` |
 | `lib/bash.ts` | Shared bash allow/deny helpers (not an extension entry) |
 | `skills/` | Skills for the model: `commit`, `github`, `herdr-background-runs`, `summarize`, `uv`, `web-browser`, `websearch` |
@@ -147,7 +147,15 @@ border gradients from the current thinking-level border color to neon pink, pres
 the thinking / bash-mode color signal. Content is padded inside the frame so text and
 the cursor never cross the border. The footer shows cwd, git branch, session name,
 model + thinking level, token/cost stats, and a 10-cell context bar (warning above 70%,
-error above 90%). Plain Unicode glyphs, no nerd font required.
+error above 90%).
+
+Also styled:
+
+- Working spinner: moon phases `🌑🌒🌓🌔🌕🌖🌗🌘` at 160ms.
+- Startup header: `◆ project` + session name + model/thinking over a gradient rule.
+
+Tool call/result rendering and the area above the editor stay built-in. Plain Unicode
+glyphs, no nerd font required.
 
 ### /btw
 
