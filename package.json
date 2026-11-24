@@ -38,7 +38,8 @@
       "./extensions/subagent.ts",
       "./extensions/fetch.ts",
       "./extensions/comment-rules.ts",
-      "./extensions/auto-route.ts"
+      "./extensions/auto-route.ts",
+      "./extensions/pretty.ts"
     ],
     "skills": [
       "./skills"

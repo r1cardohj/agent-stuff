@@ -25,6 +25,7 @@ Personal [Pi](https://pi.dev) package: extensions, skills, and prompts.
 | `extensions/btw.ts` | `/btw` side-chat popover: ask side questions, optionally summarize into main chat |
 | `extensions/subagent.ts` | `subagent` tool: run delegated tasks in a herdr-managed Pi session |
 | `extensions/notify.ts` | Desktop notification (OSC 777) when a run ends and waits for input |
+| `extensions/pretty.ts` | Fixed neon styling: rounded gradient editor border + padded content, custom footer with context bar |
 | `skills/herdr/` | `herdr-background-runs` skill for long tests/builds/services via `hc` |
 | `lib/bash.ts` | Shared bash allow/deny helpers (not an extension entry) |
 | `skills/` | Skills for the model: `commit`, `github`, `herdr-background-runs`, `summarize`, `uv`, `web-browser`, `websearch` |
@@ -137,6 +138,16 @@ to collect results and clean up. Use it for anything expected to take over ~60 s
 Sends a native desktop notification via the OSC 777 escape sequence when the agent
 finishes a run and is waiting for input. Supported terminals include Ghostty, iTerm2,
 WezTerm, and rxvt-unicode.
+
+### pretty (neon)
+
+Always-on, no command. The editor gets a closed rounded box (`╭╮╰╯` corners plus `│`
+side borders drawn in the padding columns, so the frame has no gaps) whose top/bottom
+border gradients from the current thinking-level border color to neon pink, preserving
+the thinking / bash-mode color signal. Content is padded inside the frame so text and
+the cursor never cross the border. The footer shows cwd, git branch, session name,
+model + thinking level, token/cost stats, and a 10-cell context bar (warning above 70%,
+error above 90%). Plain Unicode glyphs, no nerd font required.
 
 ### /btw
 
