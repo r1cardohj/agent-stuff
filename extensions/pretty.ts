@@ -15,6 +15,7 @@ import {
 	indexedColor,
 	mixColors,
 	rgbColor,
+	sliceByColumn,
 	type TUI,
 	truncateToWidth,
 	visibleWidth,
@@ -84,6 +85,7 @@ class PrettyEditor extends CustomEditor {
 		theme: EditorTheme,
 		keybindings: KeybindingsManager,
 		private ctx: ExtensionContext,
+		private modeBadge: { text: string | undefined },
 	) {
 		super(tui, theme, keybindings);
 		this.appBorderColor = this.borderColor;
@@ -108,7 +110,16 @@ class PrettyEditor extends CustomEditor {
 
 	protected renderTopBorder(width: number, hiddenLineCount: number): string {
 		this.borderSide = "top";
-		return super.renderTopBorder(width, hiddenLineCount);
+		const line = super.renderTopBorder(width, hiddenLineCount);
+		const text = this.modeBadge.text;
+		if (!text) return line;
+		const badge = ` ${text} `;
+		const badgeW = visibleWidth(badge);
+		if (badgeW + 4 > width) return line;
+		const before = sliceByColumn(line, 0, 2);
+		const after = sliceByColumn(line, 2 + badgeW, width - 2 - badgeW);
+		// Badge ANSI resets may drop the border's bold; reassert it for the tail.
+		return before + badge + BOLD_ON + after;
 	}
 
 	protected renderBottomBorder(width: number, hiddenLineCount: number): string {
@@ -232,7 +243,12 @@ function contextBar(theme: Theme, usage: ContextUsage | undefined): string {
 	return `${bar} ${theme.fg(color, label)}${theme.fg("dim", win)}`;
 }
 
-function install(pi: ExtensionAPI, ctx: ExtensionContext): void {
+function install(
+	pi: ExtensionAPI,
+	ctx: ExtensionContext,
+	modeBadge: { text: string | undefined },
+	onEditorTui: (tui: TUI) => void,
+): void {
 	ctx.ui.setFooter((tui, theme, footerData) => {
 		const unsub = footerData.onBranchChange(() => tui.requestRender());
 		return {
@@ -251,6 +267,8 @@ function install(pi: ExtensionAPI, ctx: ExtensionContext): void {
 					...(branch ? [theme.fg("accent", branch)] : []),
 					...(name ? [theme.fg("dim", name)] : []),
 				];
+				const statuses = footerData.getExtensionStatuses();
+
 				const model = ctx.model;
 				let modelStr = model ? model.id : "no-model";
 				if (model?.reasoning) modelStr += ` · ${ctx.thinkingLevel ?? pi.getThinkingLevel()}`;
@@ -264,9 +282,10 @@ function install(pi: ExtensionAPI, ctx: ExtensionContext): void {
 				const line2 = fitLine(tokenStr, contextBar(theme, ctx.getContextUsage()), width);
 
 				const lines = [line1, line2];
-				const statuses = footerData.getExtensionStatuses();
-				if (statuses.size > 0) {
-					const text = [...statuses.entries()]
+				// "mode" renders in the editor top border (PrettyEditor.renderTopBorder).
+				const rest = [...statuses.entries()].filter(([key]) => key !== "mode");
+				if (rest.length > 0) {
+					const text = rest
 						.sort(([a], [b]) => a.localeCompare(b))
 						.map(([, t]) => sanitizeStatus(t))
 						.join(" ");
@@ -276,7 +295,10 @@ function install(pi: ExtensionAPI, ctx: ExtensionContext): void {
 			},
 		};
 	});
-	ctx.ui.setEditorComponent((tui, theme, keybindings) => new PrettyEditor(tui, theme, keybindings, ctx));
+	ctx.ui.setEditorComponent((tui, theme, keybindings) => {
+		onEditorTui(tui);
+		return new PrettyEditor(tui, theme, keybindings, ctx, modeBadge);
+	});
 
 	ctx.ui.setWorkingIndicator({ frames: MOON_FRAMES, intervalMs: 160 });
 
@@ -305,9 +327,19 @@ function install(pi: ExtensionAPI, ctx: ExtensionContext): void {
 }
 
 export default function (pi: ExtensionAPI) {
+	// Badge text is published by extensions/mode.ts.
+	const modeBadge: { text: string | undefined } = { text: undefined };
+	let editorTui: TUI | undefined;
+	pi.events.on("agent-stuff:mode-status", (data) => {
+		modeBadge.text = (data as { text?: string }).text;
+		editorTui?.requestRender();
+	});
+
 	pi.on("session_start", (_event, ctx) => {
 		if (ctx.mode !== "tui") return;
-		install(pi, ctx);
+		install(pi, ctx, modeBadge, (tui) => {
+			editorTui = tui;
+		});
 	});
 
 	pi.on("session_shutdown", () => {

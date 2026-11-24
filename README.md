@@ -8,8 +8,8 @@ Personal [Pi](https://pi.dev) package: extensions, skills, and prompts.
 | Path | Role |
 |------|------|
 | `extensions/itsdangerous.ts` | Block / confirm dangerous bash commands |
-| `extensions/mode.ts` | `/ask` `/teach` `/yolo` — one-key mode switching (read-only Q&A / teaching / full tools) |
-| `extensions/mode/*.md` | System prompts for ask / teach modes (edit to tweak behavior) |
+| `extensions/mode.ts` | `/ask` `/teach` `/yolo` `/plan` — one-key mode switching (read-only Q&A / teaching / full tools / plan-approve-execute) |
+| `extensions/mode/*.md` | System prompts for ask / teach / plan modes (edit to tweak behavior) |
 | `extensions/answer.ts` | `/answer` extract questions from last assistant message into interactive Q&A |
 | `extensions/misslee.ts` | `/misslee` Chinese ↔ English helper: idiomatic translations + grammar/style review |
 | `extensions/files.ts` | `/files` browse git-tracked + session-referenced files (Ctrl+Shift+O / Ctrl+Shift+R) |
@@ -28,20 +28,28 @@ Personal [Pi](https://pi.dev) package: extensions, skills, and prompts.
 | `extensions/pretty.ts` | Neon styling: rounded gradient editor frame, custom footer, moon-phase spinner, header banner |
 | `skills/herdr/` | `herdr-background-runs` skill for long tests/builds/services via `hc` |
 | `lib/bash.ts` | Shared bash allow/deny helpers (not an extension entry) |
+| `lib/plan.ts` | Plan text extraction + `[DONE:n]` progress helpers (not an extension entry) |
 | `skills/` | Skills for the model: `commit`, `github`, `herdr-background-runs`, `summarize`, `uv`, `web-browser`, `websearch` |
 | `prompts/` | Prompt templates (add `*.md`) |
 | `themes/` | `tokyonight_moon` theme |
 
-### /ask /teach /yolo
+### /ask /teach /yolo /plan
 
 ```text
 /yolo    # full tools, unrestricted (default)
 /ask     # read-only Q&A: answer questions and show code, no file writes
 /teach   # education mode: first-principles, step-by-step, examples + code review
-pi --agent-mode ask # start in a specific mode (yolo|ask|teach); NOT --mode (built-in output flag)
+/plan    # toggle plan mode: read-only exploration → numbered plan → approve to execute
+/todos   # show current plan progress
+pi --agent-mode ask # start in a specific mode (yolo|ask|teach|plan); NOT --mode (built-in output flag)
 ```
 
 `ask` and `teach` are read-only: active tools are `read`, `grep`, `find`, `ls`, `bash` (read-only allowlist). Model should answer in chat with code fences, not edit files.
+
+`plan` (Ctrl+Alt+P) is read-only plus `search` / `fetch` for research. The agent explores and
+outputs a numbered `Plan:`; you then choose **Execute / Stay / Refine**. Execution restores full
+tools, tracks steps via `[DONE:n]` tags, and shows a ☑/☐ progress widget (footer: `📋 n/total`).
+Mode and plan state persist across session resume.
 
 ### itsdangerous
 
