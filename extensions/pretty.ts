@@ -46,6 +46,11 @@ const STYLE: PrettyStyle = {
 let gradientCache: { key: string; theme: Theme; ansi: string[] } | undefined;
 let statsCache: { key: string; input: number; output: number; cost: number } | undefined;
 
+// Unicode has no heavy rounded corners, so thickness comes from SGR bold on the
+// light box glyphs instead of swapping to heavy (square-cornered) line characters.
+const BOLD_ON = "\x1b[1m";
+const BOLD_OFF = "\x1b[22m";
+
 function parseFgAnsi(prefix: string): Color | undefined {
 	const matches = [...prefix.matchAll(/\x1b\[(?:38;2;(\d+);(\d+);(\d+)|38;5;(\d+)|([39][0-7]))m/g)];
 	const m = matches[matches.length - 1];
@@ -114,7 +119,7 @@ class PrettyEditor extends CustomEditor {
 	// padding columns (always spaces at paddingX>=2) so the frame has no gaps.
 	render(width: number): string[] {
 		const lines = [...super.render(width)];
-		const side = this.appBorderColor("│");
+		const side = BOLD_ON + this.appBorderColor("│") + BOLD_OFF;
 		for (let i = 1; i < lines.length - 1; i++) {
 			let l = lines[i]!;
 			if (l.startsWith(" ")) l = side + l.slice(1);
@@ -145,14 +150,14 @@ class PrettyEditor extends CustomEditor {
 		const cut = probe.indexOf("\x00");
 		const prefix = cut > 0 ? probe.slice(0, cut) : "";
 		const base = parseFgAnsi(prefix);
-		if (!base) return this.appBorderColor(decorated);
+		if (!base) return BOLD_ON + this.appBorderColor(decorated) + BOLD_OFF;
 
 		const theme = this.ctx.ui.theme;
 		const faint = prefix.includes("\x1b[2m");
 		const ansi = gradientAnsi(theme, base, theme.colors[STYLE.glow], n, prefix);
-		let out = faint ? "\x1b[2m" : "";
+		let out = BOLD_ON + (faint ? "\x1b[2m" : "");
 		for (let i = 0; i < n; i++) out += ansi[i] + chars[i];
-		return out + (faint ? "\x1b[22;39m" : "\x1b[39m");
+		return out + "\x1b[22;39m";
 	}
 }
 
